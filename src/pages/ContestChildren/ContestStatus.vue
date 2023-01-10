@@ -28,7 +28,10 @@
         </div>
       </div>
 
-      <StatusList :data="status.list">
+      <StatusList
+        :data="status.list"
+        :isContestStatus="true"
+      >
       </StatusList>
     </template>
     <template v-else>
@@ -45,16 +48,12 @@
 </template>
 
 <script lang="ts" setup name="Status" >
-import {
-  getCurrentInstance,
-  onBeforeMount,
-  onMounted,
-  provide,
-  reactive,
-} from "vue";
+import { getCurrentInstance, onMounted, provide, reactive } from "vue";
 import StatusList from "../../components/Status/StatusList.vue";
 import StatusSearch from "../../components/Status/StatusSearch.vue";
+import { usePageBufferedDataStore } from "../../pinia/pageBufferdData";
 const { proxy } = getCurrentInstance() as any;
+const pageBufferedDataStore = usePageBufferedDataStore();
 
 var loadings = {
   list: null,
@@ -93,7 +92,7 @@ var config = reactive({
     if (query.Limit) {
       params["Limit"] = query.Limit;
     }
-    if (query.PID && query.PID > 0) {
+    if (query.PID) {
       params["PID"] = query.PID;
     }
     if (query.UID && query.UID != "") {
@@ -113,7 +112,10 @@ var config = reactive({
         status.list = data.Data;
         config.syncUrl(query);
       }
-      proxy.codeProcessor(data.code, data.msg);
+      proxy.codeProcessor(
+        data?.code ?? 100001,
+        data?.msg ?? "服务器错误\\\\error"
+      );
       loadings.list.close();
     });
   },
@@ -122,9 +124,6 @@ var config = reactive({
     let params = {};
     if (config.CID) {
       params["CID"] = config.CID;
-    }
-    if (config.Pass) {
-      params["Pass"] = config.Pass;
     }
     if (query.Limit) {
       params["Limit"] = query.Limit;
@@ -135,7 +134,7 @@ var config = reactive({
     if (query.Limit) {
       params["Limit"] = query.Limit;
     }
-    if (query.PID && query.PID > 0) {
+    if (query.PID) {
       params["PID"] = query.PID;
     }
     if (query.UID && query.UID != "") {
@@ -163,11 +162,11 @@ var query = reactive({
   Count: 0,
   Page: 1,
   Limit: 20,
-  queryPID: (PID: number) => {
+  queryPID: (PID: string) => {
     query.PID = PID;
     config.update();
   },
-  PIDSetter: (value: number) => {
+  PIDSetter: (value: string) => {
     query.PID = value;
   },
   UIDSetter: (value: string) => {
@@ -180,7 +179,7 @@ type contestType = {
   CID: number;
   Pass: string;
   info: {
-    Data: { PID: number; Title: string; ACNum: number; SubmitNum: number }[];
+    Data: { PID: string; Title: string; ACNum: number; SubmitNum: number }[];
     BeginTime: number;
     CID: number;
     Type: number;
@@ -213,7 +212,7 @@ var contest = reactive<contestType>({
   },
   copy(data: {
     Problems: string;
-    Data: { PID: number; Title: string; ACNum: number; SubmitNum: number }[];
+    Data: { PID: string; Title: string; ACNum: number; SubmitNum: number }[];
     UID: string;
     Title: string;
     CID: number;
@@ -252,23 +251,23 @@ var contest = reactive<contestType>({
     contest.info.UID = data.UID;
   },
   //检查竞赛跳转是否合理
-  checkContest: async () => {
-    await proxy
-      .$get("api/contest/" + config.CID + "?Pass=" + config.Pass)
-      .then((res) => {
-        let data = res.data;
-        if (data.code == 0) {
-          // proxy.$log(data);
-          contest.copy(data);
-          config.correct = true;
-        }
-        proxy.codeProcessor(data.code, data.msg);
-      });
+  checkContest: async (CID: number, Pass: string) => {
+    await proxy.$get("api/contest/" + CID, { Pass }).then((res) => {
+      let data = res.data;
+      if (data.code == 0) {
+        // proxy.$log(data);
+        contest.copy(data);
+        config.correct = true;
+      }
+      proxy.codeProcessor(
+        data?.code ?? 100001,
+        data?.msg ?? "服务器错误\\\\error"
+      );
+    });
   },
   //返回比赛界面
   backToContest: () => {
-    let params: { Pass?: string; CID?: string } = {
-      Pass: null,
+    let params: { CID?: string } = {
       CID: null,
     };
     if (proxy.$route.query.CID) {
@@ -280,12 +279,9 @@ var contest = reactive<contestType>({
       });
       return;
     }
-    if (proxy.$route.query.Pass) {
-      params.Pass = proxy.$route.query.Pass;
-    }
     proxy.$router.push({
-      path: "/Contest",
-      query: params,
+      name: "Contest",
+      params,
     });
   },
 });
@@ -295,7 +291,7 @@ type statusType = {
   list: {
     UID: string;
     Lang: number;
-    PID: number;
+    PID: string;
     Result: string;
     SID: number;
     SubmitTime: number;
@@ -305,16 +301,17 @@ type statusType = {
 };
 var status = reactive<statusType>({ list: [] });
 
-provide("config", config);
-provide("query", query);
-
-onBeforeMount(() => {
+async function init() {
   //同步url参数
-  if (!proxy.$route.query.CID) {
+  let CID = Number(proxy.$route.query.CID);
+  if (!CID) {
+    proxy.elMessage({
+      message: "跳转地址错误，请重试",
+      type: "warning",
+    });
     return;
   }
-  config.CID = Number(proxy.$route.query.CID);
-  config.Pass = proxy.$route.query.Pass;
+  //页面参数
   if (proxy.$route.query.Page) query.Page = Number(proxy.$route.query.Page);
   if (proxy.$route.query.Limit) query.Limit = Number(proxy.$route.query.Limit);
 
@@ -326,15 +323,24 @@ onBeforeMount(() => {
     query.Result = proxy.$route.query.Result;
   if (typeof proxy.$route.query.Lang != "undefined")
     query.Lang = Number(proxy.$route.query.Lang);
-});
 
-onMounted(async () => {
+  let temp = pageBufferedDataStore.getContestRouterData(CID);
+  let Pass = temp?.Pass ?? "";
+  config.CID = CID;
+  config.Pass = Pass;
+
   //检查跳转正确性
-  await contest.checkContest();
+  await contest.checkContest(CID, Pass);
+
   //检查正确再继续查询数据
   if (config.correct) {
     config.update();
   }
+}
+provide("config", config);
+provide("query", query);
+onMounted(() => {
+  init();
 });
 </script>
 

@@ -134,8 +134,9 @@
 
 <script lang="ts" setup name="Contests">
 import { getCurrentInstance, onMounted, reactive } from "vue";
-import { ElMessageBox } from "element-plus";
+import { usePageBufferedDataStore } from "../pinia/pageBufferdData";
 const { proxy } = getCurrentInstance() as any;
+const pageBufferedDataStore = usePageBufferedDataStore();
 
 //页面数据
 type contestsType = {
@@ -203,7 +204,10 @@ function getContests() {
         contests.list = data.Data;
       }
       config.loading.close();
-      proxy.codeProcessor(data.code, data.msg);
+      proxy.codeProcessor(
+        data?.code ?? 100001,
+        data?.msg ?? "服务器错误\\\\error"
+      );
     });
 
   //同步服务器时间
@@ -216,7 +220,7 @@ function getContests() {
   });
 }
 
-//跳转题目
+//跳转竞赛
 function getContestById(contest: any) {
   //竞赛未开始
   if (contest.BeginTime > config.serverTime) {
@@ -228,39 +232,13 @@ function getContestById(contest: any) {
     return;
   }
   //验证策略
-  if (contest.IsPublic == 1) {
-    proxy.$router.push({
-      path: "/Contest",
-      query: {
-        CID: contest.CID,
-      },
-    });
-  } else {
-    ElMessageBox.prompt("请输入竞赛“" + contest.Title + "”的密码：", "验证", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      inputValidator: function f(s) {
-        if (s == "") return "请输入密码";
-      },
-      inputErrorMessage: "",
-    }).then((res) => {
-      let pass: string = res.value;
-      if (!pass) {
-        proxy.elMessage({
-          message: "密码不能为空!",
-          type: "warning",
-        });
-        return;
-      }
-      proxy.$router.push({
-        path: "/Contest",
-        query: {
-          CID: contest.CID,
-          Pass: pass,
-        },
-      });
-    });
-  }
+  pageBufferedDataStore.setContestRouterData(contest.CID, contest.IsPublic);
+  proxy.$router.push({
+    name: "Contest",
+    params: {
+      CID: contest.CID,
+    },
+  });
 }
 
 //用于同步浏览器url

@@ -64,10 +64,12 @@ const CDN_MDEditor = {
 };
 
 const CDN_USE = {
-	external: ["axios", "animate.css"],
+	external: ["axios", "animate.css", "xlsx", "compressorjs"],
 	externalGlobals: {
 		axios: "axios",
 		"animate.css": "animate.css",
+		xlsx: "XLSX",
+		compressorjs: "Compressor",
 	},
 };
 
@@ -81,7 +83,7 @@ const CDN_ElementPlus = {
 
 export default ({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "ENV");
-	console.log(env);
+	// console.log(env);
 	return defineConfig({
 		server: {
 			hmr: true,

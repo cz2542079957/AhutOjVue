@@ -1,4 +1,11 @@
-import { configDataType, customThemeType, rankDataType, submitDataType, userInfoType } from "./bufferTypes";
+import { useUserDataStore } from "../../pinia/userData";
+import {
+	configDataType,
+	customThemeType,
+	rankDataType,
+	submitDataType,
+	userInfoType,
+} from "./bufferTypes";
 
 export * from "./bufferTypes";
 
@@ -33,9 +40,14 @@ export class UserData {
 
 	//清空用户登录相关凭证
 	public static clearUserLoginCertificate() {
+		//退出登录
+		let userDataStore = useUserDataStore();
+		userDataStore.logout();
+		//清空缓存
 		localStorage.removeItem("ahutOjToken");
 		localStorage.removeItem("ahutOjSaveLoginStatus");
 		localStorage.removeItem("ahutOjUserUid");
+		localStorage.removeItem("pageRouterData_contest");
 		sessionStorage.removeItem("userSubmitData");
 		sessionStorage.removeItem("ahutOjUserInfo");
 	}

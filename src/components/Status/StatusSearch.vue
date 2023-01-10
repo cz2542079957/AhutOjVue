@@ -5,10 +5,10 @@
         <div class="label">题目</div>
         <div class="input">
           <Input
-            :v-model="query.PID"
-            @change="query.PIDSetter"
+            v-model="query.PID"
             placeholder="题目ID"
-            type="number"
+            type="text"
+            @click="config.search(query)"
           >
           </Input>
         </div>
@@ -17,10 +17,10 @@
         <div class="label">用户</div>
         <div class="input">
           <Input
-            :v-model="query.UID"
-            @change="query.UIDSetter"
+            v-model="query.UID"
             placeholder="用户ID"
             type="text"
+            @click="config.search(query)"
           >
           </Input>
         </div>
@@ -80,18 +80,11 @@ var config = inject("config") as any;
 const props = defineProps(["query"]);
 //暂存的查询数据，在点击查询后才同步到真实查询参数中
 var query = reactive({
-  PID: null,
+  PID: "",
   UID: "",
   CID: "",
   Lang: -1,
   Result: "不限",
-  //为防止数据响应式丢失，设置setter
-  PIDSetter: (value: number) => {
-    query.PID = value;
-  },
-  UIDSetter: (value: string) => {
-    query.UID = value;
-  },
 });
 
 onMounted(() => {

@@ -9,9 +9,9 @@
     </div>
     <div>
       <span>题目ID：</span>
-      <el-input-number
+      <el-input
         v-model="submit.PID"
-        :min="0"
+        style="width: 200px"
       />
     </div>
     <div>
@@ -49,12 +49,12 @@ const { proxy } = getCurrentInstance() as any;
 //题目数据
 var submit = reactive({
   SID: 0,
-  PID: 0,
+  PID: "",
   UID: "",
   CID: 0,
   init() {
     this.SID = 0;
-    this.PID = 0;
+    this.PID = "";
     this.UID = "";
     this.CID = 0;
   },
@@ -73,7 +73,10 @@ function complete() {
     if (data.code == 0) {
       proxy.elMessage({ message: "重判成功!", type: "success" });
     }
-    proxy.codeProcessor(data.code, data.msg);
+    proxy.codeProcessor(
+      data?.code ?? 100001,
+      data?.msg ?? "服务器错误\\\\error"
+    );
   });
 }
 </script>

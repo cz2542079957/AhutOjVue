@@ -136,13 +136,19 @@
     <div class="flag">
       其他
     </div>
+    <div id="hint">
+      题解、论坛、互动功能正在路上，敬请期待AhutOj二期计划!
+      <br>
+      <a href="https://github.com/cz2542079957/AhutOjForum.git">跟踪二期工程动态</a>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ElMessageBox } from "element-plus";
 import { onMounted, reactive, getCurrentInstance } from "vue";
+import { usePageBufferedDataStore } from "../pinia/pageBufferdData";
 const { proxy } = getCurrentInstance() as any;
+const pageBufferedDataStore = usePageBufferedDataStore();
 
 //页面配置
 var config = reactive({
@@ -245,7 +251,10 @@ function getContestsInfo() {
       while (contests.overList.length < 5)
         contests.overList.push({ Title: "" });
     }
-    proxy.codeProcessor(data.code, data.msg);
+    proxy.codeProcessor(
+      data?.code ?? 100001,
+      data?.msg ?? "服务器错误\\\\error"
+    );
   });
 }
 
@@ -255,41 +264,14 @@ function recentContestsProcessor() {
 }
 
 var goto = {
-  contest: (contest: contestsType) => {
-    //验证策略
-    if (contest.IsPublic == 1) {
-      proxy.$router.push({
-        path: "/Contest",
-        query: {
-          CID: contest.CID,
-        },
-      });
-    } else {
-      ElMessageBox.prompt("请输入竞赛“" + contest.Title + "”的密码：", "验证", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        inputValidator: function f(s) {
-          if (s == "") return "请输入密码";
-        },
-        inputErrorMessage: "",
-      }).then((res) => {
-        let pass: string = res.value;
-        if (!pass) {
-          proxy.elMessage({
-            message: "密码不能为空!",
-            type: "warning",
-          });
-          return;
-        }
-        proxy.$router.push({
-          path: "/Contest",
-          query: {
-            CID: contest.CID,
-            Pass: pass,
-          },
-        });
-      });
-    }
+  contest: (contest: any) => {
+    pageBufferedDataStore.setContestRouterData(contest.CID, contest.IsPublic);
+    proxy.$router.push({
+      name: "Contest",
+      params: {
+        CID: contest.CID,
+      },
+    });
   },
 };
 
@@ -334,6 +316,15 @@ onMounted(() => {
     &:hover {
       letter-spacing: 4px;
       filter: drop-shadow(0 0 2px #cdcdcd);
+    }
+  }
+
+  #hint {
+    @include font_color("font1");
+    font-size: $fontSize6;
+
+    & > a {
+      @include font_color("fill11");
     }
   }
 

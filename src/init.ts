@@ -8,12 +8,14 @@ import elNotification from "./utils/elNotificationFactory";
 import "animate.css";
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
+import "element-plus/theme-chalk/dark/css-vars.css";
 
 import * as Utils from "./utils/globalFunctions";
 import * as Buffer from "./utils/buffer/buffer";
+import fileUtilsInstall from "./utils/fileUtils";
 import log from "./utils/consoleLog";
 
-import { App, Component } from "vue";
+import { App } from "vue";
 
 //初始化机
 export default function programInitialization(app: App<Element>) {
@@ -35,6 +37,8 @@ function mountUtils(app: App<Element>) {
 	app.config.globalProperties.Buffer = Buffer;
 	//装载封装Log
 	app.config.globalProperties.$log = log;
+	//装载文件工具集
+	fileUtilsInstall(app);
 	console.log("Utils mounted");
 }
 

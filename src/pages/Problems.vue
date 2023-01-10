@@ -2,39 +2,55 @@
   <div class="problems">
     <div class="left">
       <div class="search">
-        <div class="searchById">
-          <input
-            class="input"
-            v-model="search.PID"
-            placeholder="题目ID"
-            @keydown.enter="getProblemsById()"
-            type="number"
-          />
-          <div
-            class="cursor_pointer"
-            @click="getProblemsById()"
-          >
-            <el-icon size="22px">
+        <!-- 根据pid -->
+        <IconInput
+          v-model="search.PID"
+          placeholder="题目ID"
+          type="text"
+        >
+          <template v-slot:icon>
+            <el-icon
+              size="22px"
+              @click="getProblemById()"
+            >
               <Aim />
             </el-icon>
-          </div>
-        </div>
-        <div class="searchByTitle">
-          <input
-            class="input"
-            v-model="search.Title"
-            placeholder="题目标题"
-            type="text"
-          />
-          <div
-            class="cursor_pointer"
-            @click="getProblemByTitle()"
+          </template>
+        </IconInput>
+        <!-- 根据title -->
+        <Input
+          v-model="search.Title"
+          placeholder="题目标题"
+          type="text"
+        >
+        </Input>
+        <!-- 根据平台PType -->
+        <div class="option">
+          <div class="label">平台</div>
+          <el-select
+            v-model="search.PType"
+            class="m-2"
+            placeholder="Select"
+            @change="getProblems()"
           >
-            <el-icon size="22px">
-              <Search />
-            </el-icon>
+            <el-option
+              v-for="item in search.PTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </div>
+        <!-- 根据标签 -->
+        <div class="option">
+          <div class="label">标签</div>
+          <div>
+
           </div>
         </div>
+      </div>
+      <div class="info">
+        <div class="count">已为你搜索到{{config.Count}}个题目</div>
       </div>
     </div>
     <div
@@ -55,7 +71,7 @@
         >
           <div
             class="title cursor_pointer"
-            @click="() => getProblemsById(item.PID)"
+            @click="() => getProblemById(item.PID)"
           >
             {{ item.PID }}&nbsp;-&nbsp;{{ item.Title }}
           </div>
@@ -66,7 +82,6 @@
             <el-tag
               v-for="major in item.Label.split(';')"
               :key="major"
-              :effect="themeSwitchStore.theme > 0 ? 'light' : 'dark'"
             >
               {{ major }}
             </el-tag>
@@ -75,10 +90,7 @@
             class="tag"
             v-else
           >
-            <el-tag
-              type="info"
-              :effect="themeSwitchStore.theme > 0 ? 'light' : 'dark'"
-            >
+            <el-tag type="info">
               暂无标签
             </el-tag>
           </div>
@@ -109,9 +121,9 @@
 
 <script lang="ts" setup name = "Problems">
 import { onMounted, getCurrentInstance, reactive } from "vue";
-import { useThemeSwitchStore } from "../pinia/themeSwitch";
+import IconInput from "../components/MyComponents/IconInput.vue";
+import Input from "../components/MyComponents/Input.vue";
 const { proxy } = getCurrentInstance() as any;
-const themeSwitchStore = useThemeSwitchStore();
 
 //页面配置
 type configType = {
@@ -142,20 +154,29 @@ var config = reactive<configType>({
 
 //页面数据 页面搜索数据配置项
 type searchType = {
-  PID: number;
+  PID: string;
+  PType: string;
+  PTypeOptions: { label: string; value: string }[];
   Title: string;
   Label: string;
-  Data: { PID: number; Title: string; Label: string }[];
+  Data: { PID: string; Title: string; Label: string }[];
   [item: string]: any;
 };
 var search = reactive<searchType>({
   PID: null,
-  Title: null,
+  PType: "",
+  PTypeOptions: [
+    { label: "全部", value: "" },
+    { label: "AHUT", value: "LOCAL" },
+    { label: "CodeForce", value: "CODEFORCES" },
+    { label: "ATCoder", value: "ATCODERTYPE" },
+  ],
+  Title: "",
   Label: null,
   Data: [],
   init() {
     search.PID = null;
-    search.Title = null;
+    search.Title = "";
     search.Data = [];
   },
 });
@@ -174,19 +195,20 @@ function init() {
 }
 
 //获取题目列表
-function getProblems(PID: number = null, Title: string = null) {
+function getProblems() {
   //显示加载效果
   config.loading = proxy.elLoading({
     node: proxy.$refs.searchResult,
   });
+  let PType = search.PType;
+  PType = PType ?? null;
   //开始获取数据
   proxy
-    .$get(
-      "api/problem/list?Page=" +
-        (config.currentPage - 1) +
-        "&Limit=" +
-        config.limit
-    )
+    .$get("api/problem/list", {
+      Page: config.currentPage - 1,
+      Limit: config.limit,
+      PType,
+    })
     .then((res: any) => {
       let data = res.data;
       if (data.code == 0) {
@@ -194,16 +216,19 @@ function getProblems(PID: number = null, Title: string = null) {
         config.Count = data.Count;
         search.Data = data.Data;
       }
-      proxy.codeProcessor(data.code, data.msg);
+      proxy.codeProcessor(
+        data?.code ?? 100001,
+        data?.msg ?? "服务器错误\\\\error"
+      );
       //关闭加载效果
       config.loading.close();
     });
 }
 
-//id搜索
-function getProblemsById(PID: number = null) {
-  if (PID != null) search.PID = PID;
-  if (search.PID == null || search.PID <= 0) {
+//id搜索跳转
+function getProblemById(PID?: string) {
+  search.PID = PID ?? search.PID;
+  if (!search.PID) {
     proxy.elMessage({
       message: "请输入有效的题目ID！",
       type: "warning",
@@ -211,15 +236,12 @@ function getProblemsById(PID: number = null) {
     return;
   }
   proxy.$router.push({
-    path: "/Problem",
-    query: {
+    name: "Problem",
+    params: {
       PID: search.PID,
     },
   });
 }
-
-//title搜索
-function getProblemByTitle() {}
 
 //用于同步浏览器url
 function SyncUrl() {
@@ -229,7 +251,8 @@ function SyncUrl() {
     query: {
       Page: config.currentPage,
       Limit: config.limit,
-      Title: search.Title,
+      Title: search.Title ?? undefined,
+      PType: search.PType,
       Label: search.Label,
     },
   });
@@ -253,6 +276,13 @@ onMounted(() => {
   .left {
     width: $problems_leftWidth;
 
+    > div {
+      &:hover {
+        @include fill_color("fill14");
+        @include box_shadow(0, 0, 3px, 1px, "fill12");
+      }
+    }
+
     .search {
       width: 100%;
       @include fill_color("fill2");
@@ -262,57 +292,38 @@ onMounted(() => {
       align-items: center;
       justify-content: center;
 
-      div {
-        input {
+      > .option {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        font-size: $fontSize5;
+        @include font_color("font1");
+
+        .label {
+          width: fit-content;
           box-sizing: border-box;
-          height: 30px;
-          width: calc(100% - 32px);
-          padding: 2px 10px;
-          border-radius: 8px;
-          font-size: $fontSize5;
-          @include font_color("font1");
-          @include fill_color("fill4");
-
-          &:focus,
-          &:hover + div,
-          &:focus + div {
-            outline: none;
-            border: 2px solid;
-            @include border_color("fill12");
-            @include font_color("fill12");
-          }
-
-          &::placeholder {
-            @include font_color("font3");
-          }
+          padding: 0 4px;
         }
       }
     }
 
-    .searchById,
-    .searchByTitle {
-      width: 94%;
-      padding: 10px 0;
+    .info {
+      margin-top: $modelDistance;
+      width: 100%;
+      @include fill_color("fill2");
+      border-radius: 10px;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
 
-      div {
-        height: 30px;
-        width: 30px;
-        @include fill_color("fill4");
+      .count {
         box-sizing: border-box;
-        border: 2px solid;
-        @include border_color("border1");
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      &:hover > div {
-        @include border_color("fill12");
-        @include font_color("fill12");
+        padding: 10px;
+        font-size: $fontSize5;
+        @include font_color("font1");
       }
     }
   }

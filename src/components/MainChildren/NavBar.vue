@@ -21,9 +21,9 @@
         比赛
       </router-link>
       <router-link
-        id="problemList"
+        id="problemLists"
         active-class="selected"
-        to="/ProblemList"
+        to="/ProblemLists"
       >
         题单
       </router-link>
@@ -31,7 +31,11 @@
         id="status"
         active-class="selected"
         to="/Status"
-      >状态
+      >
+        状态
+      </router-link>
+      <router-link to="/">
+        论坛
       </router-link>
     </div>
     <div class="right">

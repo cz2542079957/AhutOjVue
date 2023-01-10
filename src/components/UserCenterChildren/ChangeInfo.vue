@@ -33,7 +33,6 @@
         style="min-width: fit-content; margin: 0 1px"
         closable
         :disable-transitions="false"
-        :effect="themeSwitchStore.theme >  0 ? 'light' : 'dark'"
         @close="setAdept.handleClose(Adept)"
       >
         {{ Adept }}
@@ -167,7 +166,10 @@ var changeInfo = reactive<changeInfoType>({
           });
           props.close(0);
         } else {
-          proxy.codeProcessor(data.code, data.msg);
+          proxy.codeProcessor(
+            data?.code ?? 100001,
+            data?.msg ?? "服务器错误\\\\error"
+          );
         }
       });
   },

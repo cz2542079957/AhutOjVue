@@ -1,27 +1,41 @@
 <template>
   <div class="input">
     <input
-      :value="props.vModel"
-      @change="onValueChange"
+      v-model="vModel"
+      @input="onValueChange"
       :placeholder="props.placeholder"
-      @keydown.enter="props.onAction ? props.onAction : null"
+      @keydown.enter="onClick"
       :type="props.type"
     />
   </div>
 </template>
-
 <script lang='ts' setup>
-const props = defineProps(["vModel", "placeholder", "type", "onAction"]);
-var emit = defineEmits(["change"]);
+import { onMounted, ref } from "vue";
+
+const props = defineProps(["modelValue", "placeholder", "type"]);
+var emit = defineEmits(["update:modelValue", "click"]);
+//代理数据
+var vModel = ref(null);
+
 function onValueChange(e: any) {
-  emit("change", e.target.value);
+  emit("update:modelValue", e.target.value);
 }
+
+function onClick(e: any) {
+  emit("click", e);
+}
+
+onMounted(() => {
+  //初始化
+  if (props.modelValue) vModel.value = props.modelValue;
+});
 </script>
 
 <style lang='scss' scoped>
 .input {
   width: 100%;
-  padding: 10px 0;
+  box-sizing: border-box;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -31,23 +45,10 @@ function onValueChange(e: any) {
     @include font_color("fill12");
   }
 
-  .icon {
-    height: 30px;
-    width: 30px;
-    @include fill_color("fill4");
-    box-sizing: border-box;
-    border: 2px solid;
-    @include border_color("font2");
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
   input {
     box-sizing: border-box;
     height: 30px;
-    width: calc(100% - 32px);
+    width: 100%;
     padding: 2px 10px;
     border-radius: 8px;
     font-size: $fontSize5;

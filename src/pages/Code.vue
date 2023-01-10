@@ -281,12 +281,15 @@ function getSubmit() {
     let data = res.data;
     if (data.code == 0) {
       submit.init();
-      proxy.$log(data);
+      // proxy.$log(data);
       submit.copy(data);
       notFound.value = false;
     }
     config.loading.close();
-    proxy.codeProcessor(data.code, data.msg);
+    proxy.codeProcessor(
+      data?.code ?? 100001,
+      data?.msg ?? "服务器错误\\\\error"
+    );
   });
 }
 
@@ -305,16 +308,21 @@ function rejudge() {
       getSubmit();
       proxy.elNotification({ message: "重判成功!", type: "success" });
     }
-    proxy.codeProcessor(data.code, data.msg);
+    proxy.codeProcessor(
+      data?.code ?? 100001,
+      data?.msg ?? "服务器错误\\\\error"
+    );
   });
 }
 
 //跳转到题目
 function goToProblem(PID: number | string) {
+  let routerName = proxy.$route.query.CID ? "ContestProblem" : "Problem";
   proxy.$router.push({
-    path: "/Problem",
-    query: {
+    name: routerName,
+    params: {
       PID,
+      CID: proxy.$route.query.CID ? proxy.$route.query.CID : undefined,
     },
   });
 }

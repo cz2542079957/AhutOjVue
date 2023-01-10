@@ -175,6 +175,10 @@ export class StatusConstValManager {
 				return constValStore.SUBMIT_STATUS_PENDING_COLOR;
 			case "FAILED":
 				return constValStore.SUBMIT_STATUS_FAILED_COLOR;
+			case "JUDGE_TIMEOUT":
+				return constValStore.SUBMIT_STATUS_JUDGE_TIMEOUT;
+			case "DENIAL_JUDGE":
+				return constValStore.SUBMIT_STATUS_DENIAL_JUDGE;
 			default:
 				return "#ffffff";
 		}
@@ -296,5 +300,43 @@ export class ColorValTools {
 		} else {
 			return _this;
 		}
+	}
+}
+
+export class DefaultHeadImage {
+	public static images = [
+		new URL("../assets/image/defaultHeadImage/0.svg", import.meta.url)
+			.href,
+		new URL("../assets/image/defaultHeadImage/1.svg", import.meta.url)
+			.href,
+		new URL("../assets/image/defaultHeadImage/2.svg", import.meta.url)
+			.href,
+		new URL("../assets/image/defaultHeadImage/3.svg", import.meta.url)
+			.href,
+		new URL("../assets/image/defaultHeadImage/4.svg", import.meta.url)
+			.href,
+		new URL("../assets/image/defaultHeadImage/5.svg", import.meta.url)
+			.href,
+		new URL("../assets/image/defaultHeadImage/6.svg", import.meta.url)
+			.href,
+		new URL("../assets/image/defaultHeadImage/7.svg", import.meta.url)
+			.href,
+		new URL("../assets/image/defaultHeadImage/8.svg", import.meta.url)
+			.href,
+		new URL("../assets/image/defaultHeadImage/9.svg", import.meta.url)
+			.href,
+		new URL(
+			"../assets/image/defaultHeadImage/10.svg",
+			import.meta.url
+		).href,
+		new URL(
+			"../assets/image/defaultHeadImage/11.svg",
+			import.meta.url
+		).href,
+	];
+
+	public static show(UID: string) {
+		let index = UID.length % 12;
+		return this.images[index];
 	}
 }
